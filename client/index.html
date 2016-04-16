@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang='en' ng-app='ocApp'>
+<head>
+	<title>Orders and Customers</title>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular-route.min.js"></script>
+
+	<script type="text/javascript">
+
+		var ocApp = angular.module('ocApp', ['ngRoute']);
+
+		ocApp.config(function ($routeProvider){
+			$routeProvider
+				.when('/customers', {
+					templateUrl: 'partials/customers.html'
+				})
+				.when('/orders', {
+					templateUrl: 'partials/orders.html'
+				})
+				.otherwise({
+					redirectTo: '/'
+				});
+		});
+
+		//CUSTOMER CONTROLLER BEGINS HERE
+		ocApp.controller('customerController', function($scope, customerFactory){
+			$scope.customers = [];
+
+			customerFactory.index(function(info){
+				$scope.customers = info;
+			});
+
+			$scope.addCustomer = function(data){
+				customerFactory.create($scope.new_customer, function(data){
+					$scope.customers = data;
+				});
+				$scope.new_customer = {};
+			}
+
+			$scope.removeCustomer = function($index){
+				// console.log($index);
+				customerFactory.delete($index, function(data){
+					$scope.customers = data;
+				});
+			}
+		});
+
+		//ORDER CONTROLLER BEGINS HERE
+		ocApp.controller('orderController', function($scope, customerFactory, orderFactory){
+			$scope.products = ['Nikes', 'iPod', 'Cell Phone', 'Pen', 'Cookies'];
+			$scope.customers = [];
+			$scope.quantity = [1, 2, 3, 4, 5, 6, 7, 8, 9 ,10];
+			$scope.orders = [];
+
+			customerFactory.index(function(info){
+				// console.log(info);
+				$scope.customers = info;
+			});
+
+			$scope.addOrder = function(data){
+				//console.log($scope.newOrder);
+				orderFactory.create($scope.newOrder, function(data){
+					$scope.orders = data;
+				});
+			}
+
+		});
+
+
+		//CUSTOMER FACTORY BEGINS HERE
+		ocApp.factory('customerFactory', function($http){
+			var factory = {};
+			var customers = [];
+
+			factory.index = function(callback){
+				$http.get('/customers').success(function(output){
+					customers = output;
+					callback(customers);
+				});
+			}
+
+			factory.create = function(info, callback){
+				$http.post('/customers', info).success(function(output){
+					customers.push(output);
+					factory.index(callback);
+					callback();
+				});
+			}
+
+			factory.delete = function(index, callback){
+				// console.log(index);
+				$http.post('/delete/' + customers[index]._id).success(function(output){
+					factory.index(callback);
+					callback();
+				});
+			}
+
+			return factory;
+		});
+
+		//ORDER FACTORY BEGINS HERE
+		ocApp.factory('orderFactory', function($http){
+			var factory = {};
+			var orders = [];
+
+			factory.index = function(callback){
+				$http.get('/orders').success(function(output){
+					orders = output;
+					callback(orders);
+				});
+			}
+
+			factory.create = function(info, callback){
+				$http.post('/orders', info).success(function(output){
+					orders.push(output);
+					factory.index(callback);
+					callback();
+				});
+			}
+			return factory;
+		});
+
+	</script>
+</head>
+<body>
+	<div class="container">
+		<a href="/">Back</a><br><hr>
+		<a href="#/customers">Customers</a><br><hr>
+		<a href="#/orders">Orders</a>
+		<div ng-view="">
+		</div>
+	</div>
+</body>
+</html>
